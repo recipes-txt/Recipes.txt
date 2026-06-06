@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-stone-50 text-stone-900;
+  }
+
+  * {
+    @apply border-stone-200;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-600 text-white font-semibold text-sm transition-all duration-150 hover:bg-amber-700 active:scale-95 shadow-sm hover:shadow-md;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border-2 border-stone-900 text-stone-900 font-semibold text-sm transition-all duration-150 hover:bg-stone-900 hover:text-white active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-stone-600 font-medium text-sm transition-all duration-150 hover:bg-stone-100 active:scale-95;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl border border-stone-200 shadow-sm;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer;
+  }
+
+  .input-base {
+    @apply w-full px-4 py-3 rounded-xl border border-stone-200 bg-white text-stone-900 placeholder-stone-400 text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent;
+  }
+
+  .section-title {
+    @apply text-3xl md:text-4xl font-bold text-stone-900 tracking-tight;
+  }
+
+  .section-subtitle {
+    @apply text-lg text-stone-500 max-w-2xl;
+  }
+
+  .tag {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Cook mode large text */
+.cook-step-text {
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  line-height: 1.6;
+}
