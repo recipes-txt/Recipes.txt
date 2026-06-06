@@ -4,6 +4,21 @@ export interface CookingNote {
   timestamp: string;
 }
 
+export interface CookLog {
+  id: string;
+  rating: number;
+  note?: string;
+  cookedAt: string;
+}
+
+export interface Collection {
+  id: string;
+  name: string;
+  emoji: string;
+  recipeIds: string[];
+  createdAt: string;
+}
+
 export interface Recipe {
   id: string;
   title: string;
@@ -17,6 +32,7 @@ export interface Recipe {
   tags?: string[];
   sourceUrl?: string;
   notes: CookingNote[];
+  cookLog?: CookLog[];
   savedAt: string;
   isFavorite?: boolean;
 }

@@ -5,6 +5,7 @@ import { BookOpen, Menu, X, ChefHat } from 'lucide-react';
 const NAV_LINKS = [
   { label: 'Recipe Cleaner', href: '/cleaner' },
   { label: 'My Vault', href: '/vault' },
+  { label: 'Grocery', href: '/grocery' },
   { label: 'Family Vault', href: '/family-vault' },
   { label: 'Pricing', href: '/pricing' },
 ];

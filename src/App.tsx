@@ -8,6 +8,7 @@ import Vault from './pages/Vault';
 import CookMode from './pages/CookMode';
 import FamilyVault from './pages/FamilyVault';
 import Pricing from './pages/Pricing';
+import GroceryList from './pages/GroceryList';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -44,6 +45,7 @@ export default function App() {
                 <Route path="/vault" element={<Vault />} />
                 <Route path="/family-vault" element={<FamilyVault />} />
                 <Route path="/pricing" element={<Pricing />} />
+                <Route path="/grocery" element={<GroceryList />} />
               </Routes>
             </Layout>
           }
