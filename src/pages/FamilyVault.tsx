@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Heart, Upload, BookOpen, X, Plus, Clock, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
-import { getFamilyRecipes, saveFamilyRecipe, deleteFamilyRecipe } from '../lib/storage';
-import { FamilyRecipe } from '../types';
+import { Heart, Upload, X, Plus, Clock, Sparkles, ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { getFamilyRecipes, saveFamilyRecipe, deleteFamilyRecipe, getRecipes } from '../lib/storage';
+import { FamilyRecipe, Recipe } from '../types';
 import { generateId, formatDate } from '../lib/utils';
 import { useToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
@@ -253,9 +253,82 @@ function FamilyRecipeCard({
   );
 }
 
+function ImportFromVaultModal({ onClose, onImport }: { onClose: () => void; onImport: (recipes: Recipe[]) => void }) {
+  const vaultRecipes = getRecipes();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const toggle = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const handleImport = () => {
+    const toImport = vaultRecipes.filter(r => selected.has(r.id));
+    onImport(toImport);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-stone-900/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl animate-slide-up max-h-[80vh] flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-stone-100 shrink-0">
+          <div>
+            <h2 className="text-lg font-bold text-stone-900">Import from My Vault</h2>
+            <p className="text-sm text-stone-500 mt-0.5">Select recipes to add to your Family Vault</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg text-stone-400 hover:bg-stone-100">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6">
+          {vaultRecipes.length === 0 ? (
+            <p className="text-center text-stone-400 py-8 text-sm">No recipes in your vault yet.</p>
+          ) : (
+            <ul className="space-y-2">
+              {vaultRecipes.map(r => (
+                <li key={r.id}>
+                  <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${selected.has(r.id) ? 'bg-rose-50 border border-rose-200' : 'bg-stone-50 border border-transparent hover:bg-stone-100'}`}>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(r.id)}
+                      onChange={() => toggle(r.id)}
+                      className="w-4 h-4 rounded accent-rose-500"
+                    />
+                    <span className="text-lg">{r.emoji || '📄'}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-stone-900 truncate">{r.title}</p>
+                      {r.description && <p className="text-xs text-stone-500 truncate">{r.description}</p>}
+                    </div>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="p-6 border-t border-stone-100 shrink-0">
+          <button
+            onClick={handleImport}
+            disabled={selected.size === 0}
+            className="w-full btn-primary justify-center disabled:opacity-40"
+          >
+            <Download size={16} />
+            Import {selected.size > 0 ? `${selected.size} recipe${selected.size > 1 ? 's' : ''}` : 'selected'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function FamilyVault() {
   const [recipes, setRecipes] = useState<FamilyRecipe[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const { showToast } = useToast();
 
   const load = () => setRecipes(getFamilyRecipes());
@@ -272,6 +345,26 @@ export default function FamilyVault() {
     deleteFamilyRecipe(id);
     load();
     showToast('Recipe removed from Family Vault.', 'info');
+  };
+
+  const handleImport = (vaultRecipes: Recipe[]) => {
+    vaultRecipes.forEach(r => {
+      const familyRecipe: FamilyRecipe = {
+        id: generateId(),
+        title: r.title,
+        contributor: 'My Vault',
+        relationship: 'Other',
+        familyStory: r.description || '',
+        ingredients: r.ingredients,
+        instructions: r.instructions,
+        notes: [],
+        savedAt: new Date().toISOString(),
+      };
+      saveFamilyRecipe(familyRecipe);
+    });
+    load();
+    setShowImport(false);
+    showToast(`${vaultRecipes.length} recipe${vaultRecipes.length > 1 ? 's' : ''} imported to Family Vault!`, 'success');
   };
 
   return (
@@ -293,10 +386,16 @@ export default function FamilyVault() {
               Too precious to lose. This vault keeps them forever.
             </p>
             {!showForm && (
-              <button onClick={() => setShowForm(true)} className="btn-primary text-base px-7 py-4">
-                <Plus size={18} />
-                Add a Family Recipe
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button onClick={() => setShowForm(true)} className="btn-primary text-base px-7 py-4">
+                  <Plus size={18} />
+                  Add a Family Recipe
+                </button>
+                <button onClick={() => setShowImport(true)} className="btn-secondary text-base px-7 py-4">
+                  <Download size={18} />
+                  Import from My Vault
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -343,16 +442,29 @@ export default function FamilyVault() {
                 <h2 className="text-lg font-semibold text-stone-900">
                   {recipes.length} preserved recipe{recipes.length !== 1 ? 's' : ''}
                 </h2>
-                <button onClick={() => setShowForm(true)} className="btn-primary text-sm px-4 py-2">
-                  <Plus size={14} />
-                  Add another
-                </button>
+                <div className="flex gap-2">
+                  <button onClick={() => setShowImport(true)} className="btn-secondary text-sm px-4 py-2">
+                    <Download size={14} />
+                    Import
+                  </button>
+                  <button onClick={() => setShowForm(true)} className="btn-primary text-sm px-4 py-2">
+                    <Plus size={14} />
+                    Add another
+                  </button>
+                </div>
               </div>
             )}
             {recipes.map(r => (
               <FamilyRecipeCard key={r.id} recipe={r} onDelete={handleDelete} />
             ))}
           </div>
+        )}
+
+        {showImport && (
+          <ImportFromVaultModal
+            onClose={() => setShowImport(false)}
+            onImport={handleImport}
+          />
         )}
 
         {/* Future features teaser */}

@@ -1,13 +1,39 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Link2, FileText, Sparkles, Save, ChefHat, Clock, Users, AlertTriangle, RotateCcw, X } from 'lucide-react';
+import { Link2, FileText, Sparkles, Save, ChefHat, Clock, Users, AlertTriangle, RotateCcw, X, Camera, AlignLeft, LayoutTemplate } from 'lucide-react';
 import { parseRecipeText, parseRecipeFromUrl } from '../lib/recipeParser';
 import { saveRecipe } from '../lib/storage';
 import { isValidUrl, generateId } from '../lib/utils';
 import { Recipe } from '../types';
 import { useToast } from '../components/Toast';
 
-type InputMode = 'url' | 'text';
+type InputMode = 'url' | 'text' | 'image';
+
+function recipeToPlainText(recipe: Partial<Recipe>): string {
+  const lines: string[] = [];
+  if (recipe.title) lines.push(recipe.title);
+  if (recipe.description) lines.push(recipe.description);
+  lines.push('');
+  if (recipe.prepTime || recipe.cookTime || recipe.servings) {
+    if (recipe.prepTime) lines.push(`Prep: ${recipe.prepTime}`);
+    if (recipe.cookTime) lines.push(`Cook: ${recipe.cookTime}`);
+    if (recipe.servings) lines.push(`Serves: ${recipe.servings}`);
+    lines.push('');
+  }
+  if (recipe.ingredients?.length) {
+    lines.push('INGREDIENTS');
+    recipe.ingredients.forEach(i => lines.push(`• ${i}`));
+    lines.push('');
+  }
+  if (recipe.instructions?.length) {
+    lines.push('INSTRUCTIONS');
+    recipe.instructions.forEach((s, i) => lines.push(`${i + 1}. ${s}`));
+    lines.push('');
+  }
+  if (recipe.tags?.length) lines.push(`Tags: ${recipe.tags.join(', ')}`);
+  if (recipe.sourceUrl) lines.push(`Source: ${recipe.sourceUrl}`);
+  return lines.join('\n');
+}
 
 function CleanedRecipePreview({
   recipe,
@@ -20,6 +46,8 @@ function CleanedRecipePreview({
   onSave: () => void;
   onCook: () => void;
 }) {
+  const [plainText, setPlainText] = useState(false);
+
   return (
     <div className="animate-slide-up">
       {isDemo && (
@@ -30,6 +58,45 @@ function CleanedRecipePreview({
           </p>
         </div>
       )}
+
+      {/* View toggle */}
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Cleaned recipe</p>
+        <div className="flex gap-1 p-1 bg-stone-100 rounded-lg">
+          <button
+            onClick={() => setPlainText(false)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${!plainText ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
+          >
+            <LayoutTemplate size={12} />
+            Card
+          </button>
+          <button
+            onClick={() => setPlainText(true)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${plainText ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
+          >
+            <AlignLeft size={12} />
+            Plain text
+          </button>
+        </div>
+      </div>
+
+      {plainText ? (
+        <div className="card p-6 mb-4">
+          <pre className="font-mono text-sm text-stone-700 whitespace-pre-wrap leading-relaxed">{recipeToPlainText(recipe)}</pre>
+          <div className="flex gap-3 pt-4 border-t border-stone-100 mt-4">
+            <button
+              onClick={() => { navigator.clipboard.writeText(recipeToPlainText(recipe)); }}
+              className="btn-secondary flex-1"
+            >
+              Copy to clipboard
+            </button>
+            <button onClick={onSave} className="btn-primary flex-1">
+              <Save size={16} />
+              Save to My Vault
+            </button>
+          </div>
+        </div>
+      ) : (
 
       <div className="card overflow-hidden">
         <div className="h-1.5 bg-gradient-to-r from-amber-400 to-amber-600" />
@@ -153,6 +220,7 @@ function CleanedRecipePreview({
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
@@ -277,10 +345,35 @@ export default function Cleaner() {
               <FileText size={14} />
               Paste Text
             </button>
+            <button
+              onClick={() => { setMode('image'); setInput(''); setResult(null); }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                mode === 'image' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+              }`}
+            >
+              <Camera size={14} />
+              Upload Photo
+            </button>
           </div>
 
           {/* Input */}
-          {mode === 'url' ? (
+          {mode === 'image' ? (
+            <div className="border-2 border-dashed border-stone-200 rounded-xl p-10 text-center bg-stone-50 hover:border-amber-300 hover:bg-amber-50/40 transition-colors cursor-pointer mb-1">
+              <Camera size={28} className="mx-auto text-stone-400 mb-3" />
+              <p className="text-sm font-medium text-stone-600 mb-1">Upload a photo of your recipe</p>
+              <p className="text-xs text-stone-400 mb-4">JPG, PNG, or PDF — handwritten or printed</p>
+              <input type="file" accept="image/*,.pdf" className="hidden" id="recipe-image-upload" />
+              <label
+                htmlFor="recipe-image-upload"
+                className="btn-secondary text-sm px-5 py-2 cursor-pointer"
+              >
+                Choose file
+              </label>
+              <p className="text-xs text-amber-600 font-medium mt-4">
+                OCR scanning coming soon — paste the text for now
+              </p>
+            </div>
+          ) : mode === 'url' ? (
             <div className="relative">
               <Link2 size={16} className="absolute left-3.5 top-3.5 text-stone-400" />
               <input
@@ -334,7 +427,7 @@ Instructions
           <div className="flex items-center gap-3 mt-4">
             <button
               onClick={handleClean}
-              disabled={loading || !input.trim()}
+              disabled={loading || (!input.trim() && mode !== 'image') || mode === 'image'}
               className="btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading ? (

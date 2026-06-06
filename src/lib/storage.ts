@@ -88,4 +88,8 @@ export const deleteFamilyRecipe = (id: string): void => {
   localStorage.setItem(FAMILY_KEY, JSON.stringify(recipes));
 };
 
+export const updateRecipe = (recipe: Recipe): void => {
+  saveRecipe(recipe);
+};
+
 export const getRecipeCount = (): number => getRecipes().length;

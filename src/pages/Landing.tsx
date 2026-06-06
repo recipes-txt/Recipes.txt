@@ -162,7 +162,9 @@ function MessyBlogMock() {
 
 export default function Landing() {
   const [email, setEmail] = useState('');
+  const [heroEmail, setHeroEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [heroSubmitted, setHeroSubmitted] = useState(false);
   const { showToast } = useToast();
 
   const handleWaitlist = (e: React.FormEvent) => {
@@ -176,6 +178,17 @@ export default function Landing() {
     setEmail('');
   };
 
+  const handleHeroSignup = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!heroEmail.includes('@')) {
+      showToast('Please enter a valid email address.', 'error');
+      return;
+    }
+    setHeroSubmitted(true);
+    showToast('You\'re signed up for early access! 🎉', 'success');
+    setHeroEmail('');
+  };
+
   return (
     <div className="overflow-x-hidden">
       {/* Hero */}
@@ -186,7 +199,7 @@ export default function Landing() {
             <div className="animate-slide-up">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-xs font-semibold mb-6">
                 <Sparkles size={12} />
-                Free to start — no credit card needed
+                Early access — join the waitlist today
               </div>
 
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-stone-900 tracking-tight leading-[1.05] mb-6 text-balance">
@@ -199,26 +212,50 @@ export default function Landing() {
                 Your recipes are scattered across screenshots, Instagram saves, blog tabs, sticky notes, and family memory. Recipes.txt fixes that.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Link to="/cleaner" className="btn-primary text-base px-7 py-4">
-                  <ChefHat size={18} />
+              {/* Hero sign-up form */}
+              {heroSubmitted ? (
+                <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 mb-6">
+                  <Check size={20} className="text-emerald-500 shrink-0" />
+                  <div>
+                    <p className="font-semibold text-emerald-800 text-sm">You're signed up!</p>
+                    <p className="text-emerald-700 text-xs">We'll email you when early access opens.</p>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleHeroSignup} className="flex flex-col sm:flex-row gap-2 mb-6 max-w-md">
+                  <input
+                    type="email"
+                    value={heroEmail}
+                    onChange={e => setHeroEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="flex-1 px-4 py-3 rounded-xl border border-stone-300 bg-white text-stone-900 placeholder-stone-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400 shadow-sm"
+                  />
+                  <button type="submit" className="btn-primary px-6 py-3 whitespace-nowrap">
+                    Sign Up for Early Access
+                  </button>
+                </form>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <Link to="/cleaner" className="btn-secondary text-sm px-5 py-2.5">
+                  <ChefHat size={16} />
                   Try Recipe Cleaner
-                  <ArrowRight size={16} />
+                  <ArrowRight size={14} />
                 </Link>
-                <Link to="/family-vault" className="btn-secondary text-base px-7 py-4">
-                  <Heart size={18} />
+                <Link to="/family-vault" className="btn-ghost text-sm px-5 py-2.5">
+                  <Heart size={16} />
                   Preserve Family Recipes
                 </Link>
               </div>
 
-              <div className="flex items-center gap-4 mt-8 text-sm text-stone-500">
+              <div className="flex items-center gap-4 text-sm text-stone-500">
                 <span className="flex items-center gap-1.5">
                   <Check size={14} className="text-emerald-500" />
                   Free 10 recipes
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Check size={14} className="text-emerald-500" />
-                  No signup required
+                  No credit card
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Check size={14} className="text-emerald-500" />

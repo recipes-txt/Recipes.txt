@@ -102,6 +102,10 @@ const FAQ = [
     q: 'Is there a free trial of Family Vault?',
     a: "Yes — early waitlist members get a 30-day free trial of Family Vault, no credit card required at signup.",
   },
+  {
+    q: 'What happens if my subscription lapses?',
+    a: "Your most recent recipes stay visible — you never lose access to your newest content. And because we support offline export, you always own a copy of everything you saved. Your data is yours, subscription or not.",
+  },
 ];
 
 export default function Pricing() {
