@@ -31,21 +31,20 @@ export default function App() {
     <>
       <ScrollToTop />
       <Routes>
-        {/* Cook mode gets a full-screen, navbar-free layout */}
+        {/* Cook mode: full-screen, no navbar */}
         <Route path="/cook/:id" element={<CookMode />} />
 
-        {/* All other routes use the standard layout */}
         <Route
           path="/*"
           element={
             <Layout>
               <Routes>
-                <Route path="/" element={<Landing />} />
-                <Route path="/cleaner" element={<Cleaner />} />
+                <Route path="/" element={<Cleaner />} />
+                <Route path="/about" element={<Landing />} />
                 <Route path="/vault" element={<Vault />} />
+                <Route path="/grocery" element={<GroceryList />} />
                 <Route path="/family-vault" element={<FamilyVault />} />
                 <Route path="/pricing" element={<Pricing />} />
-                <Route path="/grocery" element={<GroceryList />} />
               </Routes>
             </Layout>
           }

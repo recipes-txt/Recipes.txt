@@ -11,37 +11,63 @@
   }
 
   body {
-    @apply bg-stone-50 text-stone-900;
+    @apply text-stone-900;
+    background-color: #fafaf9;
+    /* Warm amber glow at the top of every page */
+    background-image: radial-gradient(ellipse 120% 45% at 50% -5%, rgba(254,243,199,0.75) 0%, transparent 72%);
+    background-attachment: fixed;
   }
 
   * {
     @apply border-stone-200;
   }
+
+  h1, h2, h3 {
+    letter-spacing: -0.02em;
+  }
 }
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-600 text-white font-semibold text-sm transition-all duration-150 hover:bg-amber-700 active:scale-95 shadow-sm hover:shadow-md;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-600 text-white font-semibold text-sm transition-all duration-200 active:scale-[0.97];
+    box-shadow: 0 1px 3px rgba(0,0,0,0.18), 0 0 0 1px rgba(180,83,9,0.2), inset 0 1px 0 rgba(255,255,255,0.12);
   }
+  .btn-primary:hover {
+    background-color: #b45309;
+    box-shadow: 0 4px 14px rgba(180,83,9,0.32), 0 2px 4px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active { transform: translateY(0); }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border-2 border-stone-900 text-stone-900 font-semibold text-sm transition-all duration-150 hover:bg-stone-900 hover:text-white active:scale-95;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border-2 border-stone-900 text-stone-900 font-semibold text-sm transition-all duration-150 hover:bg-stone-900 hover:text-white active:scale-[0.97];
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-stone-600 font-medium text-sm transition-all duration-150 hover:bg-stone-100 active:scale-95;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-stone-600 font-medium text-sm transition-all duration-150 hover:bg-stone-100 active:scale-[0.97];
   }
 
   .card {
-    @apply bg-white rounded-2xl border border-stone-200 shadow-sm;
+    @apply bg-white rounded-2xl border border-stone-200/80;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.015);
   }
 
   .card-hover {
-    @apply card transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer;
+    @apply card transition-all duration-200 cursor-pointer;
+  }
+  .card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.10), 0 3px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(217,119,6,0.08);
+    border-color: rgba(253, 211, 77, 0.4);
   }
 
   .input-base {
-    @apply w-full px-4 py-3 rounded-xl border border-stone-200 bg-white text-stone-900 placeholder-stone-400 text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent;
+    @apply w-full px-4 py-3 rounded-xl border border-stone-200 bg-white text-stone-900 placeholder-stone-400 text-sm transition-all duration-150;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04) inset;
+  }
+  .input-base:focus {
+    @apply outline-none border-amber-400;
+    box-shadow: 0 0 0 3px rgba(251,191,36,0.18), 0 1px 2px rgba(0,0,0,0.04) inset;
   }
 
   .section-title {
@@ -53,26 +79,56 @@
   }
 
   .tag {
-    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800;
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60;
+  }
+
+  /* Serving stepper shared component */
+  .stepper-btn {
+    @apply w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-150 border select-none;
   }
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+  .text-balance { text-wrap: balance; }
 
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* Gradient text */
+  .gradient-text {
+    background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
 
-/* Cook mode large text */
+/* Cook mode large step text */
 .cook-step-text {
   font-size: clamp(1.25rem, 3vw, 1.75rem);
   line-height: 1.6;
+}
+
+/* Bounce-in animation for success states */
+@keyframes bounceIn {
+  0%   { opacity: 0; transform: scale(0.85) translateY(8px); }
+  60%  { opacity: 1; transform: scale(1.04) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-bounce-in {
+  animation: bounceIn 0.42s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* Subtle shimmer for loading states */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #f5f5f4 25%, #e7e5e4 50%, #f5f5f4 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
 }
