@@ -13,7 +13,7 @@ export default function Footer() {
                 <BookOpen size={14} className="text-white" />
               </div>
               <span className="font-bold text-stone-900">
-                Recipes<span className="text-amber-600">.txt</span>
+                Recipes<span className="text-amber-600">.md</span>
               </span>
             </div>
             <p className="text-stone-500 text-sm leading-relaxed max-w-xs">
