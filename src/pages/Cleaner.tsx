@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link2, FileText, Sparkles, Save, ChefHat, Clock, Users, AlertTriangle, RotateCcw, X, Camera, AlignLeft, LayoutTemplate } from 'lucide-react';
 import { parseRecipeText, parseRecipeFromUrl } from '../lib/recipeParser';
-import { saveRecipe } from '../lib/storage';
+import { saveRecipe, updateRecipe, getRecipes } from '../lib/storage';
 import { isValidUrl, generateId } from '../lib/utils';
 import { Recipe } from '../types';
 import { useToast } from '../components/Toast';
+import { scaleIngredient } from '../lib/ingredientScaler';
+import { parseBaseServings, adjustServingsLabel } from '../lib/servingScaler';
+import { toMetric } from '../lib/unitConverter';
 
 type InputMode = 'url' | 'text' | 'image';
 
@@ -232,8 +235,17 @@ export default function Cleaner() {
   const [result, setResult] = useState<Partial<Recipe> | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [servingCount, setServingCount] = useState(4);
+  const [isMetric, setIsMetric] = useState(false);
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (result) {
+      const base = parseBaseServings(result.servings ?? '') ?? 4;
+      setServingCount(base);
+    }
+  }, [result?.id]);
 
   const handleClean = async () => {
     if (!input.trim()) {
@@ -267,6 +279,21 @@ export default function Cleaner() {
     setLoading(false);
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const imageUrl = reader.result as string;
+      setResult(prev => prev ? { ...prev, imageUrl } : prev);
+      if (savedId) {
+        const existing = getRecipes().find(r => r.id === savedId);
+        if (existing) updateRecipe({ ...existing, imageUrl });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSave = () => {
     if (!result) return;
     const recipe: Recipe = {
@@ -281,6 +308,7 @@ export default function Cleaner() {
       servings: result.servings,
       tags: result.tags,
       sourceUrl: result.sourceUrl,
+      imageUrl: result.imageUrl,
       notes: [],
       savedAt: new Date().toISOString(),
     };
@@ -305,6 +333,16 @@ export default function Cleaner() {
     setSavedId(null);
     setIsDemo(false);
   };
+
+  const baseServings = result ? (parseBaseServings(result.servings ?? '') ?? 4) : 4;
+  const servingScale = result ? servingCount / baseServings : 1;
+  const displayIngredients = result?.ingredients?.map(i => {
+    const scaled = servingScale !== 1 ? scaleIngredient(i, servingScale) : i;
+    return isMetric ? toMetric(scaled) : scaled;
+  });
+  const displayServings = result?.servings
+    ? adjustServingsLabel(result.servings, servingCount)
+    : `${servingCount} servings`;
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -453,12 +491,74 @@ Instructions
 
         {/* Result */}
         {result && (
-          <CleanedRecipePreview
-            recipe={result}
-            isDemo={isDemo}
-            onSave={handleSave}
-            onCook={handleCook}
-          />
+          <>
+            {/* Serving controls */}
+            <div className="card px-5 py-4 mb-5">
+              <div className="flex flex-col sm:flex-row items-center gap-5 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-semibold text-stone-600">Servings:</span>
+                  <button onClick={() => setServingCount(c => Math.max(1, c - 1))} className="stepper-btn bg-stone-100 hover:bg-amber-100 text-stone-700">−</button>
+                  <span className="text-xl font-bold text-stone-900 min-w-[2rem] text-center tabular-nums">{servingCount}</span>
+                  <button onClick={() => setServingCount(c => Math.min(24, c + 1))} className="stepper-btn bg-stone-100 hover:bg-amber-100 text-stone-700">+</button>
+                </div>
+                <div className="flex items-center gap-2">
+                  {(['Imperial', 'Metric'] as const).map(u => (
+                    <button key={u} onClick={() => setIsMetric(u === 'Metric')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${(u === 'Metric') === isMetric ? 'bg-amber-600 border-amber-600 text-white' : 'bg-white border-stone-200 text-stone-600 hover:border-amber-300'}`}>
+                      {u}
+                    </button>
+                  ))}
+                </div>
+                {(servingScale !== 1 || isMetric) && (
+                  <span className="text-xs text-stone-400 sm:ml-auto">Scaled for display · original saved to vault</span>
+                )}
+              </div>
+            </div>
+
+            {/* Photo upload */}
+            <div className="card px-5 py-4 mb-5 flex items-center gap-4">
+              {result.imageUrl ? (
+                <>
+                  <div className="relative h-20 w-28 rounded-xl overflow-hidden shrink-0">
+                    <img src={result.imageUrl} alt="" className="w-full h-full object-cover" />
+                    <button onClick={() => setResult(r => r ? { ...r, imageUrl: undefined } : r)}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-stone-900/60 flex items-center justify-center text-white">
+                      <X size={10} />
+                    </button>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-stone-700 mb-0.5">Photo added ✓</p>
+                    <p className="text-xs text-stone-400 mb-2">Will be saved with the recipe card</p>
+                    <label className="inline-flex items-center gap-1.5 text-xs text-amber-600 font-medium cursor-pointer hover:text-amber-700">
+                      <Camera size={12} />Change photo
+                      <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                    </label>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-12 h-12 rounded-xl bg-stone-100 flex items-center justify-center shrink-0 text-stone-400">
+                    <Camera size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-stone-700 mb-0.5">Add a photo</p>
+                    <p className="text-xs text-stone-400 mb-2">Upload a food photo for this recipe card</p>
+                    <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-medium text-stone-600 hover:border-amber-400 hover:text-amber-700 cursor-pointer transition-colors">
+                      <Camera size={12} />Choose photo
+                      <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                    </label>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <CleanedRecipePreview
+              recipe={{ ...result, ingredients: displayIngredients ?? result.ingredients ?? [], servings: displayServings }}
+              isDemo={isDemo}
+              onSave={handleSave}
+              onCook={handleCook}
+            />
+          </>
         )}
 
         {/* Example recipes */}

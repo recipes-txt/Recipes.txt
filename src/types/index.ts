@@ -31,6 +31,7 @@ export interface Recipe {
   servings?: string;
   tags?: string[];
   sourceUrl?: string;
+  imageUrl?: string;
   notes: CookingNote[];
   cookLog?: CookLog[];
   savedAt: string;

@@ -8,8 +8,10 @@ import { getRecipeById, addNote, addCookLog } from '../lib/storage';
 import { Recipe, CookingNote, CookLog } from '../types';
 import { generateId, formatDateTime } from '../lib/utils';
 import { useToast } from '../components/Toast';
-import { scaleIngredient, SCALE_OPTIONS } from '../lib/ingredientScaler';
+import { scaleIngredient } from '../lib/ingredientScaler';
 import { detectTimer } from '../lib/timerParser';
+import { parseBaseServings } from '../lib/servingScaler';
+import { toMetric } from '../lib/unitConverter';
 
 // ── Confetti ─────────────────────────────────────────────────────────────────
 function launchConfetti() {
@@ -243,7 +245,8 @@ export default function CookMode() {
   const [notes, setNotes] = useState<CookingNote[]>([]);
   const [wakeLockSupported, setWakeLockSupported] = useState(false);
   const [showIngredients, setShowIngredients] = useState(false);
-  const [scale, setScale] = useState(1);
+  const [servingCount, setServingCount] = useState(4);
+  const [isMetric, setIsMetric] = useState(false);
   const [showFinished, setShowFinished] = useState(false);
   const [voiceActive, setVoiceActive] = useState(false);
   const recognitionRef = useRef<unknown>(null);
@@ -253,7 +256,12 @@ export default function CookMode() {
   useEffect(() => {
     if (!id) return;
     const r = getRecipeById(id);
-    if (r) { setRecipe(r); setNotes(r.notes); }
+    if (r) {
+      setRecipe(r);
+      setNotes(r.notes);
+      const base = parseBaseServings(r.servings ?? '');
+      if (base) setServingCount(base);
+    }
   }, [id]);
 
   const toggleIngredient = useCallback((i: number) => {
@@ -335,7 +343,10 @@ export default function CookMode() {
     );
   }
 
-  const scaledIngredients = recipe.ingredients.map(i => scaleIngredient(i, scale));
+  const baseServings = parseBaseServings(recipe.servings ?? '') ?? 4;
+  const scale = servingCount / baseServings;
+  const rawIngredients = recipe.ingredients.map(i => scaleIngredient(i, scale));
+  const scaledIngredients = isMetric ? rawIngredients.map(i => toMetric(i)) : rawIngredients;
   const totalSteps = recipe.instructions.length;
   const progress = ((currentStep + 1) / totalSteps) * 100;
   const isDone = currentStep === totalSteps - 1;
@@ -366,20 +377,19 @@ export default function CookMode() {
             <p className="text-stone-400 text-sm">Check off what you have before cooking starts.</p>
           </div>
 
-          {/* Scale selector */}
+          {/* Serving count stepper */}
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <span className="text-xs text-stone-500 font-medium">Servings:</span>
+            <button onClick={() => setServingCount(c => Math.max(1, c - 1))} className="w-8 h-8 rounded-lg bg-stone-800 border border-stone-700 text-stone-300 font-bold text-lg flex items-center justify-center hover:bg-stone-700 transition-colors">−</button>
+            <span className="text-xl font-bold text-stone-100 min-w-[2rem] text-center tabular-nums">{servingCount}</span>
+            <button onClick={() => setServingCount(c => Math.min(24, c + 1))} className="w-8 h-8 rounded-lg bg-stone-800 border border-stone-700 text-stone-300 font-bold text-lg flex items-center justify-center hover:bg-stone-700 transition-colors">+</button>
+          </div>
+          {/* Imperial / Metric toggle */}
           <div className="flex items-center justify-center gap-2 mb-6">
-            <span className="text-xs text-stone-500 font-medium mr-1">Scale:</span>
-            {SCALE_OPTIONS.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setScale(opt.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
-                  scale === opt.value
-                    ? 'bg-amber-600 border-amber-600 text-white'
-                    : 'bg-stone-800 border-stone-700 text-stone-400 hover:text-stone-200'
-                }`}
-              >
-                {opt.label}
+            {(['Imperial', 'Metric'] as const).map(u => (
+              <button key={u} onClick={() => setIsMetric(u === 'Metric')}
+                className={`px-4 py-1.5 rounded-lg text-xs font-semibold border transition-all ${(u === 'Metric') === isMetric ? 'bg-amber-600 border-amber-600 text-white' : 'bg-stone-800 border-stone-700 text-stone-400 hover:text-stone-200'}`}>
+                {u}
               </button>
             ))}
           </div>
@@ -433,7 +443,7 @@ export default function CookMode() {
               <h1 className="text-sm font-semibold text-stone-200 truncate max-w-xs">{recipe.title}</h1>
               {scale !== 1 && (
                 <span className="px-2 py-0.5 rounded-full bg-amber-600/30 text-amber-300 text-xs font-bold">
-                  {SCALE_OPTIONS.find(o => o.value === scale)?.label}
+                  {servingCount} srv
                 </span>
               )}
             </div>
@@ -555,17 +565,19 @@ export default function CookMode() {
           {/* Sidebar: ingredients */}
           <div className="lg:block">
             <div className="sticky top-24">
-              {/* Scale buttons in sidebar */}
+              {/* Serving controls in sidebar */}
               <div className="bg-stone-800/60 rounded-2xl p-4 border border-stone-700/50 mb-3">
-                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Scale</p>
-                <div className="flex gap-1.5">
-                  {SCALE_OPTIONS.map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setScale(opt.value)}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${scale === opt.value ? 'bg-amber-600 text-white' : 'bg-stone-700 text-stone-400 hover:text-stone-200'}`}
-                    >
-                      {opt.label}
+                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Servings</p>
+                <div className="flex items-center gap-2 justify-center mb-3">
+                  <button onClick={() => setServingCount(c => Math.max(1, c - 1))} className="w-7 h-7 rounded-lg bg-stone-700 text-stone-300 font-bold flex items-center justify-center hover:bg-stone-600 text-sm">−</button>
+                  <span className="text-lg font-bold text-stone-100 min-w-[2rem] text-center tabular-nums">{servingCount}</span>
+                  <button onClick={() => setServingCount(c => Math.min(24, c + 1))} className="w-7 h-7 rounded-lg bg-stone-700 text-stone-300 font-bold flex items-center justify-center hover:bg-stone-600 text-sm">+</button>
+                </div>
+                <div className="flex gap-1">
+                  {(['Imp', 'Met'] as const).map(u => (
+                    <button key={u} onClick={() => setIsMetric(u === 'Met')}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${(u === 'Met') === isMetric ? 'bg-amber-600 text-white' : 'bg-stone-700 text-stone-400 hover:text-stone-200'}`}>
+                      {u === 'Met' ? 'Metric' : 'Imperial'}
                     </button>
                   ))}
                 </div>

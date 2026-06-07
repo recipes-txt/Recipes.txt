@@ -11,7 +11,9 @@
   }
 
   body {
-    @apply bg-stone-50 text-stone-900;
+    @apply text-stone-900;
+    background: radial-gradient(ellipse at 60% 0%, #fef3c720 0%, #fafaf9 60%);
+    background-color: #fafaf9;
   }
 
   * {
@@ -21,7 +23,11 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-600 text-white font-semibold text-sm transition-all duration-150 hover:bg-amber-700 active:scale-95 shadow-sm hover:shadow-md;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-600 text-white font-semibold text-sm transition-all duration-150 hover:bg-amber-500 active:scale-95;
+    box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 0 0 0 rgba(217,119,6,.4);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 4px 12px rgba(217,119,6,.35);
   }
 
   .btn-secondary {
@@ -33,11 +39,15 @@
   }
 
   .card {
-    @apply bg-white rounded-2xl border border-stone-200 shadow-sm;
+    @apply bg-white rounded-2xl border border-stone-200;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06), 0 0 0 0 transparent;
   }
 
   .card-hover {
-    @apply card transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer;
+    @apply card transition-all duration-200 hover:-translate-y-0.5 cursor-pointer;
+  }
+  .card-hover:hover {
+    box-shadow: 0 8px 24px rgba(120,53,15,.08), 0 2px 6px rgba(0,0,0,.06);
   }
 
   .input-base {
@@ -54,6 +64,14 @@
 
   .tag {
     @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent;
+  }
+
+  .stepper-btn {
+    @apply w-9 h-9 rounded-xl flex items-center justify-center font-bold text-lg transition-colors;
   }
 }
 
