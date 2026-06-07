@@ -10,8 +10,6 @@ import { generateId, formatDateTime } from '../lib/utils';
 import { useToast } from '../components/Toast';
 import { scaleIngredient, SCALE_OPTIONS } from '../lib/ingredientScaler';
 import { detectTimer } from '../lib/timerParser';
-import { toMetric } from '../lib/unitConverter';
-import { parseBaseServings } from '../lib/servingScaler';
 
 // ── Confetti ─────────────────────────────────────────────────────────────────
 function launchConfetti() {
@@ -246,7 +244,6 @@ export default function CookMode() {
   const [wakeLockSupported, setWakeLockSupported] = useState(false);
   const [showIngredients, setShowIngredients] = useState(false);
   const [scale, setScale] = useState(1);
-  const [isMetric, setIsMetric] = useState(false);
   const [showFinished, setShowFinished] = useState(false);
   const [voiceActive, setVoiceActive] = useState(false);
   const recognitionRef = useRef<unknown>(null);
@@ -338,9 +335,7 @@ export default function CookMode() {
     );
   }
 
-  const baseServings = parseBaseServings(recipe.servings || '');
   const scaledIngredients = recipe.ingredients.map(i => scaleIngredient(i, scale));
-  const displayIngredients = isMetric ? scaledIngredients.map(toMetric) : scaledIngredients;
   const totalSteps = recipe.instructions.length;
   const progress = ((currentStep + 1) / totalSteps) * 100;
   const isDone = currentStep === totalSteps - 1;
@@ -371,33 +366,22 @@ export default function CookMode() {
             <p className="text-stone-400 text-sm">Check off what you have before cooking starts.</p>
           </div>
 
-          {/* Serving count + metric controls */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
-            {baseServings ? (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-stone-400 font-semibold">Serves</span>
-                <button onClick={() => setScale(s => Math.max(0.25, parseFloat((s - 1 / baseServings).toFixed(4))))}
-                  className="w-8 h-8 rounded-lg bg-stone-800 border border-stone-700 text-stone-300 hover:bg-stone-700 hover:text-white flex items-center justify-center font-bold text-sm transition-all">−</button>
-                <span className="min-w-[2.5rem] text-center text-stone-200 font-bold text-lg">{Math.max(1, Math.round(baseServings * scale))}</span>
-                <button onClick={() => setScale(s => parseFloat((s + 1 / baseServings).toFixed(4)))}
-                  className="w-8 h-8 rounded-lg bg-stone-800 border border-stone-700 text-stone-300 hover:bg-stone-700 hover:text-white flex items-center justify-center font-bold text-sm transition-all">+</button>
-                {scale !== 1 && <span className="text-xs text-amber-400 font-semibold bg-amber-900/30 border border-amber-700/40 px-2 py-0.5 rounded-full">{scale.toFixed(2)}×</span>}
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-stone-500 font-medium mr-1">Scale:</span>
-                {SCALE_OPTIONS.map(opt => (
-                  <button key={opt.value} onClick={() => setScale(opt.value)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${scale === opt.value ? 'bg-amber-600 border-amber-600 text-white' : 'bg-stone-800 border-stone-700 text-stone-400 hover:text-stone-200'}`}>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="flex items-center gap-1 p-1 bg-stone-800 rounded-xl border border-stone-700">
-              <button onClick={() => setIsMetric(false)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${!isMetric ? 'bg-stone-600 text-white shadow' : 'text-stone-500 hover:text-stone-300'}`}>Imperial</button>
-              <button onClick={() => setIsMetric(true)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${isMetric ? 'bg-stone-600 text-white shadow' : 'text-stone-500 hover:text-stone-300'}`}>Metric</button>
-            </div>
+          {/* Scale selector */}
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <span className="text-xs text-stone-500 font-medium mr-1">Scale:</span>
+            {SCALE_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setScale(opt.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                  scale === opt.value
+                    ? 'bg-amber-600 border-amber-600 text-white'
+                    : 'bg-stone-800 border-stone-700 text-stone-400 hover:text-stone-200'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
 
           <div className="bg-stone-800/60 rounded-2xl p-6 border border-stone-700/50 mb-6">
@@ -406,7 +390,7 @@ export default function CookMode() {
               <span className="text-xs text-stone-500">{checkedIngredients.size}/{recipe.ingredients.length} ready</span>
             </div>
             <ul className="space-y-3">
-              {displayIngredients.map((ing, i) => (
+              {scaledIngredients.map((ing, i) => (
                 <li key={i} onClick={() => toggleIngredient(i)} className={`flex items-start gap-3 cursor-pointer group transition-opacity ${checkedIngredients.has(i) ? 'opacity-40' : ''}`}>
                   <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${checkedIngredients.has(i) ? 'bg-emerald-500 border-emerald-500' : 'border-stone-600 group-hover:border-stone-400'}`}>
                     {checkedIngredients.has(i) && <Check size={12} className="text-white" />}
@@ -449,10 +433,9 @@ export default function CookMode() {
               <h1 className="text-sm font-semibold text-stone-200 truncate max-w-xs">{recipe.title}</h1>
               {scale !== 1 && (
                 <span className="px-2 py-0.5 rounded-full bg-amber-600/30 text-amber-300 text-xs font-bold">
-                  {baseServings ? `${Math.round(baseServings * scale)} servings` : `${scale.toFixed(2)}×`}
+                  {SCALE_OPTIONS.find(o => o.value === scale)?.label}
                 </span>
               )}
-              {isMetric && <span className="px-2 py-0.5 rounded-full bg-sky-600/30 text-sky-300 text-xs font-bold">Metric</span>}
             </div>
           </div>
 
@@ -603,7 +586,7 @@ export default function CookMode() {
                     <span className="text-xs text-stone-500">{checkedIngredients.size}/{recipe.ingredients.length}</span>
                   </div>
                   <ul className="space-y-2.5">
-                    {displayIngredients.map((ing, i) => (
+                    {scaledIngredients.map((ing, i) => (
                       <li key={i} onClick={() => toggleIngredient(i)} className={`flex items-start gap-2.5 cursor-pointer group transition-opacity ${checkedIngredients.has(i) ? 'opacity-40' : ''}`}>
                         <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${checkedIngredients.has(i) ? 'bg-emerald-500 border-emerald-500' : 'border-stone-600 group-hover:border-stone-500'}`}>
                           {checkedIngredients.has(i) && <Check size={10} className="text-white" />}

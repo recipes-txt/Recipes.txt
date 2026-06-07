@@ -4,7 +4,7 @@ import Fuse from 'fuse.js';
 import {
   Search, SlidersHorizontal, Heart, ChefHat, Clock, Users, Trash2, Star, X, Plus,
   ArrowUpDown, ChevronLeft, ChevronRight, Download, Edit2, AlignLeft, Tag, Check,
-  Printer, History, Folder, FolderPlus, Scale,
+  Printer, History, Folder, FolderPlus,
 } from 'lucide-react';
 import {
   getRecipes, deleteRecipe, toggleFavorite, addNote, deleteNote, updateRecipe,
@@ -13,9 +13,6 @@ import {
 } from '../lib/storage';
 import { Recipe, CookingNote, FamilyRecipe, Collection, CookLog } from '../types';
 import { formatDate, formatDateTime, generateId } from '../lib/utils';
-import { scaleIngredient } from '../lib/ingredientScaler';
-import { toMetric } from '../lib/unitConverter';
-import { parseBaseServings, adjustServingsLabel } from '../lib/servingScaler';
 import { useToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 
@@ -137,23 +134,6 @@ function RecipeDetailModal({
   const [editIngredients, setEditIngredients] = useState(recipe.ingredients.join('\n'));
   const [editInstructions, setEditInstructions] = useState(recipe.instructions.join('\n'));
   const [editTags, setEditTags] = useState<string[]>(recipe.tags || []);
-
-  // Serving scaler + metric
-  const baseServings = useMemo(() => parseBaseServings(recipe.servings || ''), [recipe.servings]);
-  const [servingCount, setServingCount] = useState(() => baseServings ?? 4);
-  const [isMetric, setIsMetric] = useState(false);
-  useEffect(() => { if (baseServings !== null) setServingCount(baseServings); }, [baseServings]);
-
-  const displayIngredients = useMemo(() => {
-    const factor = baseServings ? servingCount / baseServings : 1;
-    let ings = recipe.ingredients.map(i => scaleIngredient(i, factor));
-    if (isMetric) ings = ings.map(i => toMetric(i));
-    return ings;
-  }, [recipe.ingredients, servingCount, baseServings, isMetric]);
-
-  const adjustedServingsLabel = baseServings
-    ? adjustServingsLabel(recipe.servings || String(servingCount), servingCount)
-    : recipe.servings;
 
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -307,33 +287,10 @@ function RecipeDetailModal({
           )}
 
           {(recipe.prepTime || recipe.cookTime || recipe.servings) && (
-            <div className="flex flex-wrap gap-2 mt-4 text-sm">
-              {recipe.prepTime && <span className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-50 border border-stone-100 rounded-xl text-stone-700 font-medium"><Clock size={13} className="text-stone-400" /> Prep: {recipe.prepTime}</span>}
-              {recipe.cookTime && <span className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-50 border border-stone-100 rounded-xl text-stone-700 font-medium"><Clock size={13} className="text-stone-400" /> Cook: {recipe.cookTime}</span>}
-              {recipe.servings && <span className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-xl text-amber-800 font-medium"><Users size={13} className="text-amber-500" /> {adjustedServingsLabel}</span>}
-            </div>
-          )}
-
-          {/* Serving scaler + metric toggle */}
-          {!editMode && (
-            <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-stone-100">
-              <div className="flex items-center gap-2">
-                <Scale size={13} className="text-amber-500" />
-                <span className="text-xs font-semibold text-stone-600">Serves</span>
-                <button onClick={() => setServingCount(c => Math.max(1, c - 1))} className="stepper-btn bg-stone-100 border-stone-200 text-stone-700 hover:bg-stone-200">−</button>
-                <input type="number" value={servingCount} min={1} onChange={e => setServingCount(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-14 text-center py-1.5 rounded-lg border border-stone-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400" />
-                <button onClick={() => setServingCount(c => c + 1)} className="stepper-btn bg-stone-100 border-stone-200 text-stone-700 hover:bg-stone-200">+</button>
-                {baseServings && servingCount !== baseServings && (
-                  <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                    {(servingCount / baseServings).toFixed(1).replace(/\.0$/, '')}× scale
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1 p-1 bg-stone-100 rounded-xl border border-stone-200/60">
-                <button onClick={() => setIsMetric(false)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${!isMetric ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}>Imperial</button>
-                <button onClick={() => setIsMetric(true)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${isMetric ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}>Metric</button>
-              </div>
+            <div className="flex flex-wrap gap-3 mt-4 text-sm">
+              {recipe.prepTime && <span className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-50 rounded-lg text-stone-700 font-medium"><Clock size={13} className="text-stone-500" /> Prep: {recipe.prepTime}</span>}
+              {recipe.cookTime && <span className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-50 rounded-lg text-stone-700 font-medium"><Clock size={13} className="text-stone-500" /> Cook: {recipe.cookTime}</span>}
+              {recipe.servings && <span className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-50 rounded-lg text-stone-700 font-medium"><Users size={13} className="text-stone-500" /> {recipe.servings}</span>}
             </div>
           )}
 
@@ -396,7 +353,7 @@ function RecipeDetailModal({
 
               {activeTab === 'ingredients' && (
                 <ul className="space-y-2.5">
-                  {displayIngredients.map((ing, i) => (
+                  {recipe.ingredients.map((ing, i) => (
                     <li key={i} className="flex items-start gap-2.5 text-sm text-stone-700">
                       <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />{ing}
                     </li>
