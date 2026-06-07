@@ -46,7 +46,7 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-semibold text-stone-900 mb-3">About</h4>
             <ul className="space-y-2">
-              {['Why Recipes.txt', 'Family Stories', 'Cook Mode', 'Roadmap'].map(item => (
+              {['Why Recipes.md', 'Family Stories', 'Cook Mode', 'Roadmap'].map(item => (
                 <li key={item}>
                   <span className="text-sm text-stone-400">{item}</span>
                 </li>
@@ -57,7 +57,7 @@ export default function Footer() {
 
         <div className="mt-10 pt-6 border-t border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-stone-400">
-            © {new Date().getFullYear()} Recipes.txt. All rights reserved.
+            © {new Date().getFullYear()} Recipes.md. All rights reserved.
           </p>
           <p className="text-xs text-stone-400 flex items-center gap-1">
             Made with <Heart size={11} className="text-red-400 fill-red-400" /> for home cooks everywhere
