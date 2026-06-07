@@ -200,6 +200,14 @@ function RecipeDetailModal({
       <div className="absolute inset-0 bg-stone-900/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-[75vw] bg-white rounded-2xl shadow-2xl animate-slide-up max-h-[90vh] flex flex-col">
 
+        {/* Recipe photo banner */}
+        {recipe.imageUrl && !editMode && (
+          <div className="relative h-48 overflow-hidden rounded-t-2xl shrink-0">
+            <img src={recipe.imageUrl} alt={recipe.title} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/10" />
+          </div>
+        )}
+
         {/* Header row */}
         <div className="flex items-center justify-between px-6 pt-5 pb-0 shrink-0">
           <div className="flex items-center gap-1">
@@ -642,7 +650,14 @@ export default function Vault() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map(recipe => (
               <button key={recipe.id} onClick={() => setSelectedRecipe(recipe)} className="text-left card-hover flex flex-col overflow-hidden group">
-                <div className="h-1.5 bg-gradient-to-r from-amber-400 to-amber-600 rounded-t-2xl" />
+                {recipe.imageUrl ? (
+                  <div className="relative h-36 overflow-hidden rounded-t-2xl shrink-0">
+                    <img src={recipe.imageUrl} alt={recipe.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-stone-900/25 to-transparent" />
+                  </div>
+                ) : (
+                  <div className="h-1.5 bg-gradient-to-r from-amber-400 to-amber-600 rounded-t-2xl" />
+                )}
                 <div className="p-5 flex flex-col flex-1">
                   <div className="flex items-start gap-3 mb-3">
                     <span className="text-2xl shrink-0">{recipe.emoji || '📄'}</span>
