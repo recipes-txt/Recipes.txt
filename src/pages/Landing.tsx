@@ -323,7 +323,7 @@ export default function Landing() {
                 Keep it forever.
               </h1>
               <p className="text-xl text-stone-500 leading-relaxed mb-8 max-w-lg">
-                Recipes.txt turns cluttered food blog posts, screenshots, and handwritten cards into beautiful, searchable recipe cards — ready to cook from.
+                Recipes.md turns cluttered food blog posts, screenshots, and handwritten cards into beautiful, searchable recipe cards — ready to cook from.
               </p>
               {heroSubmitted ? (
                 <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 mb-6">
