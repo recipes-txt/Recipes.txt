@@ -26,7 +26,7 @@ export default function Navbar() {
               <BookOpen size={16} className="text-white" />
             </div>
             <span className="font-bold text-stone-900 tracking-tight">
-              Recipes<span className="text-amber-600">.txt</span>
+              Recipes<span className="text-amber-600">.md</span>
             </span>
           </Link>
 
